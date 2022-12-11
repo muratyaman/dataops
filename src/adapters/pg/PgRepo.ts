@@ -32,7 +32,7 @@ function opsFun(op: string, f: string, v: IScalar[]): string {
   throw new Error('Unknown operator ' + op);
 }
 
-export class PgRepo<RowModel> implements IRepo<RowModel> {
+export class PgRepo<TRowModel> implements IRepo<TRowModel> {
 
   constructor(public db: PgDatabase, public name: string) {
 
@@ -54,17 +54,17 @@ export class PgRepo<RowModel> implements IRepo<RowModel> {
     params: IScalar[] = [],
     limit = 0,
     offset = 0,
-  ): Promise<QueryResult<RowModel>> {
+  ): Promise<QueryResult<TRowModel[]>> {
     const limitInt = parseInt(String(limit));
     const offsetInt = parseInt(String(offset));
     const whereClause = (where ? ' WHERE ' + where : '');
     const limitClause = (limit ? ' LIMIT ' + limitInt : '');
     const offsetClause = (offset ? ' OFFSET ' + offsetInt : '');
     const command = `SELECT * FROM ${this.name} ${whereClause} ${limitClause} ${offsetClause}`;
-    return this.db.query<RowModel>(command, params);
+    return this.db.query<TRowModel>(command, params);
   }
 
-  async _selectOne(where = '', params: IScalar[] = []): Promise<RowModel> {
+  async _selectOne(where = '', params: IScalar[] = []): Promise<TRowModel> {
     const result = await this._select(where, params, 1);
     if (result && result.rows && result.rows[0]) {
       return result.rows[0];
@@ -130,18 +130,18 @@ export class PgRepo<RowModel> implements IRepo<RowModel> {
     return { where, params };
   }
 
-  async findOne(options: IRepoFindOptions): Promise<RowModel> {
+  async findOne(options: IRepoFindOptions): Promise<TRowModel> {
     const { where, params } = this._whereConditions(options.filters);
     return this._selectOne(where, params);
   }
 
-  async findMany(options: IRepoFindOptions): Promise<RowModel[]> {
+  async findMany(options: IRepoFindOptions): Promise<TRowModel[]> {
     const { where, params } = this._whereConditions(options.filters);
     const result = await this._select(where, params, options.limit, options.limit);
     return Promise.resolve(result.rows);
   }
 
-  async _insert(row: RowModel): Promise<number> {
+  async _insert(row: TRowModel): Promise<number> {
     const fields: string[] = [], params: IScalar[] = [], placeHolders: string[] = [];
 
     Object.entries(row).forEach(([field, value]) => {
@@ -152,16 +152,16 @@ export class PgRepo<RowModel> implements IRepo<RowModel> {
 
     const command = 'INSERT INTO ' + this.name + ' (' + fields.join(', ') + ') '
       + 'VALUES (' + placeHolders.join(', ') + ')';
-    const result = await this.db.query<RowModel>(command, params);
+    const result = await this.db.query<TRowModel>(command, params);
     return result.rowCount;
   }
 
-  async insertOne(row: RowModel): Promise<boolean> {
+  async insertOne(row: TRowModel): Promise<boolean> {
     const count = await this._insert(row);
     return 0 < count;
   }
 
-  async _update(options: IRepoFindOptions, row: RowModel, limit = 1): Promise<number> {
+  async _update(options: IRepoFindOptions, row: TRowModel, limit = 1): Promise<number> {
     const { where, params } = this._whereConditions(options.filters);
     const assignments: string[] = [];
 
@@ -175,11 +175,11 @@ export class PgRepo<RowModel> implements IRepo<RowModel> {
     const limitInt = parseInt(String(limit));
     const limitStr = limitInt ? `LIMIT ${limitInt}` : '';
     const command = `UPDATE ${this.name} SET ${assignmentsStr} ${whereStr} ${limitStr}`;
-    const result = await this.db.query<RowModel>(command, params);
+    const result = await this.db.query<TRowModel>(command, params);
     return result.rowCount;
   }
 
-  async updateOne(id: string, row: RowModel): Promise<boolean> {
+  async updateOne(id: string, row: TRowModel): Promise<boolean> {
     const count = await this._update({ filters: { id }}, row);
     return 0 < count;
   }
@@ -190,7 +190,7 @@ export class PgRepo<RowModel> implements IRepo<RowModel> {
     const limitInt = parseInt(String(limit));
     const limitStr = limitInt ? `LIMIT ${limitInt}` : '';
     const command = `DELETE FROM ${this.name} ${whereStr} ${limitStr}`;
-    const result = await this.db.query<RowModel>(command, params);
+    const result = await this.db.query<TRowModel>(command, params);
     return result.rowCount;
   }
 

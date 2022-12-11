@@ -15,7 +15,7 @@ export class MgDatabase implements IDatabase {
   async connect(): Promise<boolean> {
     const dbUrl = this.config.URL;
     const dbName = this.config.DB_NAME;
-    const dbOptions = { useNewUrlParser: true };
+    const dbOptions = { maxPoolSize: 10 };
     try {
       this.client = await MongoClient.connect(dbUrl, dbOptions);
       this.db = this.client.db(dbName);

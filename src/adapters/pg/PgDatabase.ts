@@ -32,16 +32,16 @@ export class PgDatabase implements IDatabase {
     return Promise.resolve(result);
   }
 
-  async query<Record = IRecord>(command: string, params: IScalar[] = []): Promise<QueryResult<Record>> {
+  async query<TRecord = IRecord>(command: string, params: IScalar[] = []): Promise<QueryResult<TRecord[]>> {
     if (this.pool) {
-      return this.pool.query<Record>(command, params);
+      return this.pool.query<TRecord[]>(command, params);
     }
     throw new Error('PgDatabase.query error: connect first');
   }
 
-  async newRepo<RowModel>(name: string): Promise<PgRepo<RowModel>> {
+  async newRepo<TRowModel>(name: string): Promise<PgRepo<TRowModel>> {
     if (this.pool) {
-      const repo = new PgRepo<RowModel>(this, name);
+      const repo = new PgRepo<TRowModel>(this, name);
       await repo.connect(this, name);
       return Promise.resolve(repo);
     }
